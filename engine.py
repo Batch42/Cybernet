@@ -1,45 +1,68 @@
 import json
 from collections import defaultdict as dd
+from PyQt5 import QtWidgets, QtCore
 
 posts = dd()
-class Post(object):
+class Post(QtWidgets.QListWidgetItem):
     """docstring for Post."""
-    def __init__(self, question, answer, subposts, votes, reccomends=[]):
+    def __init__(self, question, answer, votes):
         super(Post, self).__init__()
         self.question = question
         self.answer = answer
-        self.subposts = subposts
-        self.superposts=[]
+        self.subposts = dd()
+        self.superposts=dd()
 
         #vote count
         self.vc=votes[0]
         self.vi=votes[1]
         self.vl=votes[2]
 
-        self.reccomends=reccomends
+        self.reccomends=dd()
 
-    def __post__(self):
-        for i in range(0,len(self.subposts)):
-            self.subposts[i]=list(posts.values())[self.subposts[i][0]][self.subposts[i][1]]
-        for i in range(0,len(self.reccomends)):
-            self.reccomends[i]=list(posts.values())[self.reccomends[i][0]][self.reccomends[i][1]]
-        for sub in self.subposts:
-            if self not in sub.superposts:
-                sub.superposts.append(self)
+        s='\t'
+        if len(self.answer)>20:
+            s+= self.answer[:20] +'...'
+        else:
+            s+= self.answer
+        self.setText(s)
+
+    def __post__(self,subs,recs=[]):
+        for i in range(0,len(subs)):
+            p = list(posts.keys())[subs[i][0]]
+            if p not in self.subposts:
+                self.subposts[p]=[]
+            for a in subs[i][1:]:
+                self.subposts[p].append(posts[p][a])
+        for i in range(0,len(recs)):
+            p = list(posts.keys())[recs[i][0]]
+            if p not in self.reccomends:
+                self.reccomends[p]=[]
+            for a in recs[i][1:]:
+                self.reccomends[p].append(list(posts.values())[a])
+        for key in self.subposts:
+            for sub in self.subposts[key]:
+                if self.question not in sub.superposts:
+                    sub.superposts[self.question]=[]
+                if self not in sub.superposts[self.question]:
+                    sub.superposts[self.question].append(self)
 
 mess=json.loads(open('posts.json').read())
 for p in mess:
     for a in mess[p]:
         if p not in posts:
             posts[p]=[]
-        if len(a)==4:
-            posts[p].append(Post(p,a[0],a[1],a[2],a[3]))
-        elif len(a)==3:
-            posts[p].append(Post(p,a[0],a[1],a[2]))
+        if len(a)==3:
+            posts[p].append(Post(p,a[0],a[2]))
+        elif len(a)==2:
+            posts[p].append(Post(p,a[0],a[1]))
 
 for p in posts:
-    for a in posts[p]:
-        a.__post__()
+    for i in range(len(posts[p])):
+        a=mess[p][i]
+        if len(a)==3:
+            posts[p][i].__post__(a[1])
+        elif len(a)==4:
+            posts[p][i].__post__(a[1],a[3])
 
 def search(query):
     global posts

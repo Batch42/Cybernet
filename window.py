@@ -25,6 +25,7 @@ class DMWindow(QtWidgets.QMainWindow):
         self.listWidget = QtWidgets.QListWidget(self.centralWidget)
         self.listWidget.setGeometry(QtCore.QRect(0, 200, 1316, 501))
         self.listWidget.setObjectName("listWidget")
+        self.listWidget.itemClicked.connect(self.select)
         self.frame = QtWidgets.QFrame(self.centralWidget)
         self.frame.setGeometry(QtCore.QRect(0, 0, 1316, 200))
         self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -37,7 +38,7 @@ class DMWindow(QtWidgets.QMainWindow):
         for p in engine.posts:
             self.listWidget.addItem(p)
             for a in engine.posts[p]:
-                self.listWidget.addItem("\t"+a.answer)
+                self.listWidget.addItem(a)
 
 
         '''self.listView = QtWidgets.QListView(self.centralWidget)
@@ -56,13 +57,31 @@ class DMWindow(QtWidgets.QMainWindow):
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("Cybernet", "Cybernet"))
 
+    def clear(self):
+        while self.listWidget.count()>0:
+            self.listWidget.takeItem(0)
+
+    def select(self,item):
+        if isinstance(item, engine.Post):
+            self.clear()
+            self.listWidget.addItem(item.question+'\n')
+            self.listWidget.addItem(item.answer+'\n')
+            for s in item.subposts:
+                self.listWidget.addItem(s)
+                for a in item.subposts[s]:
+                    self.listWidget.addItem(a)
+            for r in item.reccomends:
+                self.listWidget.addItem(r)
+                for a in item.reccomends[r]:
+                    self.listWidget.addItem(a)
+
     def search(self):
         results = engine.search(self.searchbox.text())
-        self.listWidget.clear()
+        self.clear()
         for p in results:
             self.listWidget.addItem(p)
             for a in engine.posts[p]:
-                self.listWidget.addItem("\t"+a.answer)
+                self.listWidget.addItem(a)
 
 
     '''def mouseReleaseEvent(self, QMouseEvent):
